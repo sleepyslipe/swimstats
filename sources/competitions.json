@@ -1,0 +1,19 @@
+{
+  "columns": ["competition_name", "year", "city", "pool_length", "fpm"],
+  "data": [
+    {
+      "competition_name": "Рождественский Кубок",
+      "year": 2025,
+      "city": "Санкт-Петербург",
+      "pool_length": 25,
+      "fpm": true
+    },
+    {
+      "competition_name": "Открытый Кубок России по плаванию в категории \"Мастерс\"",
+      "year": 2024,
+      "city": "Казань",
+      "pool_length": 25,
+      "fpm": true
+    }
+  ]
+}
