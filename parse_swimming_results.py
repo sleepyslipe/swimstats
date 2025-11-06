@@ -6,23 +6,22 @@ import chardet
 import pandas as pd
 from enum import Enum
 import os
+import json
+import sys
+
+if len(sys.argv) < 1:
+   print('no argument')
+   sys.exit(1)
+
+input_file = sys.argv[1]
 
 print('Script started')
-
-# название соревнования и длина чаши задаются вручную + путь к файлам
-competition_name = "Кубок России 2024"
-city = "Казань"
-pool_length = "25"
-input_file_path = 'sources/Кубок_России_2024.pdf'
-output_file_path = 'sources/results_dataframe.csv'
-fpm = True # соревнование есть в календаре ФПМ
+output_results_file_path = 'sources/results.csv'
 
 # создание словаря с именами столбцов будущего датафрейма и типами данных
 column_types = {
+    'competition_id': 'int64',
     'date': 'datetime64[ns]',
-    'competition_name': 'string',
-    'city': 'string', 
-    'pool_length': 'int64',
     'distance': 'int64',
     'style': 'string',
     'age_category': 'string',
@@ -32,14 +31,12 @@ column_types = {
     'club': 'string',
     'time': 'float64',
     'points': 'int64',
-    'place': 'int64',
-    'fpm': 'bool'
+    'place': 'int64'
 }
 
 
 # создание датафрейма, который будет хранить данные о результатах заплывов
-results_dataframe = pd.DataFrame(columns=column_types.keys()).astype(column_types)
-
+results_dataframe = pd.DataFrame(columns=column_types.keys()).astype(column_types)\
 
 # класс, хранящий статусы чтения файла
 class ReadingStatus(Enum):
@@ -97,9 +94,7 @@ class ReadingProgress:
 
 
 # функция, которая парсит pdf-файл с результатами и записывает данные в датафрейм results_dataframe
-def parse_pdf_swimming_results(file_path, competition_name, pool_length):
-
-
+def parse_pdf_swimming_results(competition):
 
     # инициализируем процесс чтения файла, устанавливаем статус READING_STARTED
     progress = ReadingProgress()
@@ -107,7 +102,7 @@ def parse_pdf_swimming_results(file_path, competition_name, pool_length):
     # считываем текст из pdf-файла и записываем в full_text
     full_text = ""
     try:
-      with open(file_path, 'rb') as pdf_file:
+      with open(competition['input_file_path'], 'rb') as pdf_file:
         pdf_reader = PyPDF2.PdfReader(pdf_file)
         for page_num in range(len(pdf_reader.pages)):
             page = pdf_reader.pages[page_num]
@@ -188,10 +183,8 @@ def parse_pdf_swimming_results(file_path, competition_name, pool_length):
         # если текущий статус - RESULT_READ, вносим полученные данные в словарь new_row_data
         if progress.is_result_read():
           new_row_data = {
+            'competition_id': competition['competition_id'],
             'date':  date,
-            'competition_name': competition_name,
-            'city': city,
-            'pool_length': pool_length,
             'distance': distance,
             'style': style,
             'age_category': age_category,
@@ -201,8 +194,7 @@ def parse_pdf_swimming_results(file_path, competition_name, pool_length):
             'club': club,
             'time': time,
             'points': points,
-            'place': place,
-            'fpm': fpm
+            'place': place
           }
 
 
@@ -212,15 +204,19 @@ def parse_pdf_swimming_results(file_path, competition_name, pool_length):
           if len(results_dataframe)%100 == 0:
             print(f'{len(results_dataframe)} lines entered')
 
+# список соревнований
+with open(input_file, "r", encoding="utf-8") as f:
+    competitions = json.load(f)
 
-# вызов функции (загрузка данных в датафрейм)
-parse_pdf_swimming_results(input_file_path, competition_name, pool_length)
-# удаление дубликатов и перезапись индексов
-results_dataframe = results_dataframe.drop_duplicates().reset_index(drop=True)
+for comp in competitions:
+   # вызов функции (загрузка данных в датафрейм)
+   parse_pdf_swimming_results(comp)
+   # удаление дубликатов и перезапись индексов
+   results_dataframe = results_dataframe.drop_duplicates().reset_index(drop=True)
 
 
-# создание файла, если отсутствует, и добавление данных к файлу, если файл существует
-if os.path.exists(output_file_path) and os.path.getsize(output_file_path) > 0:
+# создание файла результатов, если отсутствует, и добавление данных к файлу, если файл существует
+if os.path.exists(output_results_file_path) and os.path.getsize(output_results_file_path) > 0:
     header = False
     mode = 'a'
 else:
@@ -230,7 +226,7 @@ else:
 # загрузка данных в csv файл
 try:
     results_dataframe.to_csv(
-        path_or_buf=output_file_path,
+        path_or_buf=output_results_file_path,
         sep=',',
         na_rep='',
         header=header,
@@ -243,7 +239,7 @@ try:
         decimal='.',
         errors='strict',
     )
-    print(f"Данные успешно загружены в файл: {output_file_path
+    print(f"Данные успешно загружены в файл: {output_results_file_path
     }")
 except Exception as e:
     print(f"Ошибка при записи в CSV-файл: {e}")
