@@ -1,0 +1,44 @@
+[
+    {
+    "competition_id": 7,
+    "competition_name": "Международный фестиваль спринта Вестер Мастерс",
+    "city": "Калининград",
+    "pool_length": "25m",
+    "year": 2025,
+    "competition_dates": "2025-05-03 – 2025-05-04",
+    "input_file_path": "/data/competitions/spb_open_2025/results.pdf",
+    "federation": "ФПМ",
+    "competition_level": "3",
+    "swimpool": "БФУ им. И.Канта",
+    "address": "ул. Александра Невского, 14к2",
+    "timekeeping": "ручной"
+  },
+  {
+    "competition_id": 11,
+    "competition_name": "Открытый лично-командный турнир в категории Стайер",
+    "city": "Тверь",
+    "pool_length": "50m",
+    "year": 2025,
+    "competition_dates": "2025-06-28 – 2025-06-29",
+    "input_file_path": "/data/competitions/spb_open_2025/results.pdf",
+    "federation": "ФПМ",
+    "competition_level": "3",
+    "swimpool": "Открытый бассейн АНО ФКиС Юность",
+    "address": "Петербургское шоссе, 95",
+    "timekeeping": "ручной"
+  },
+    {
+    "competition_id": 15,
+    "competition_name": "Открытый турнир ветеранов плавания Калининград Супермастерс",
+    "city": "Калининград",
+    "pool_length": "25m",
+    "year": 2025,
+    "competition_dates": "2025-09-27",
+    "input_file_path": "/data/competitions/spb_open_2025/results.pdf",
+    "federation": "ФПМ",
+    "competition_level": "3",
+    "swimpool": "БФУ им. И.Кана",
+    "address": "ул. Александра Невского, 14к2",
+    "timekeeping": "ручной"
+  }
+]

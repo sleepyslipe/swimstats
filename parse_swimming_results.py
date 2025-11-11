@@ -7,16 +7,12 @@ import pandas as pd
 from enum import Enum
 import os
 import json
-import sys
 
-if len(sys.argv) < 1:
-   print('no argument')
-   sys.exit(1)
 
-input_file = sys.argv[1]
+input_file = 'sources/competitions_lists/competitions_2025.json'
 
 print('Script started')
-output_results_file_path = 'sources/results.csv'
+output_results_file_path = 'sources/results_2025.csv'
 
 # создание словаря с именами столбцов будущего датафрейма и типами данных
 column_types = {
@@ -36,7 +32,7 @@ column_types = {
 
 
 # создание датафрейма, который будет хранить данные о результатах заплывов
-results_dataframe = pd.DataFrame(columns=column_types.keys()).astype(column_types)\
+results_dataframe = pd.DataFrame(columns=column_types.keys()).astype(column_types)
 
 # класс, хранящий статусы чтения файла
 class ReadingStatus(Enum):
@@ -239,7 +235,8 @@ try:
         decimal='.',
         errors='strict',
     )
-    print(f"Данные успешно загружены в файл: {output_results_file_path
-    }")
+    print(f"Данные успешно загружены в файл: {output_results_file_path}")
 except Exception as e:
     print(f"Ошибка при записи в CSV-файл: {e}")
+
+results_dataframe = None
