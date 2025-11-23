@@ -1,0 +1,14 @@
+ [{
+    "competition_id": 1,
+    "competition_name": "Рождественский Кубок",
+    "city": "Санкт-Петербург",
+    "pool_length": "25m",
+    "year": 2025,
+    "competition_dates": "2025-01-04 – 2025-01-05",
+    "input_file_path": "sources/results_protocols/2025/type_1/Рождественский_Кубок_2025.pdf",
+    "federation": "ФПМ",
+    "competition_level": "2",
+    "swimpool": "Центр Плавания",
+    "address": "ул. Хлопина, 10",
+    "timekeeping": "электронный"
+  }]

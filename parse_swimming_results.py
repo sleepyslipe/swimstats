@@ -9,10 +9,10 @@ import os
 import json
 
 
-input_file = 'sources/competitions_lists/competitions_2025.json'
+input_file = 'sources/competitions_lists/test.json'
 
 print('Script started')
-output_results_file_path = 'sources/results_2025.csv'
+output_results_file_path = 'sources/test.csv'
 
 # создание словаря с именами столбцов будущего датафрейма и типами данных
 column_types = {
@@ -109,7 +109,7 @@ def parse_pdf_swimming_results(competition):
     
     # паттерны для извлечения данных из строк разных типов: дата/результат/дистанция
     date_pattern = r"(\d{2}.\d{2}.\d{4})"
-    result_pattern = r"(\d+)\.(\w+\s+\w+)\s+(\d+)\s+(\w+)\s*([\w\s-]+)\s+([\d:\.]+)\s+([0-9]{3,4})"
+    result_pattern = r"(\d+)\.(\w+\s+\w+)\s+(\d+)\s+(\w+)\s*([\w\s-]*)\s+([\d:\.]+)\s+([0-9]{3,4})"
     race_pattern = r"(Женщины|Мужчины)\s+,\s+(\w+)m\s+(\w+)\s+(\w+\s)?(\d+\s-\s\d+)"
 
     # определяем кодировку текста
@@ -141,7 +141,9 @@ def parse_pdf_swimming_results(competition):
             age = int(match.group(3))
             club = match.group(4)
             if match.group(5):
-              club += ' ' + match.group(5)
+              if match.group(5)[0] != '-':
+                club += ' ' 
+              club += match.group(5)
             time = match.group(6)
             points = match.group(7)
 
@@ -195,7 +197,8 @@ def parse_pdf_swimming_results(competition):
 
 
           # добавляем в датафрейм новую строку - new_row_data
-          results_dataframe.loc[len(results_dataframe)] = new_row_data
+          if new_row_data['age'] >= 20:
+            results_dataframe.loc[len(results_dataframe)] = new_row_data
 
           if len(results_dataframe)%100 == 0:
             print(f'{len(results_dataframe)} lines entered')
