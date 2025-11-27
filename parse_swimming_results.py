@@ -9,10 +9,10 @@ import os
 import json
 
 
-input_file = 'sources/competitions_lists/test.json'
+input_file = 'sources/competitions_lists/test2.json'
 
 print('Script started')
-output_results_file_path = 'sources/test.csv'
+output_results_file_path = 'sources/test2.csv'
 
 # создание словаря с именами столбцов будущего датафрейма и типами данных
 column_types = {
@@ -111,6 +111,7 @@ def parse_pdf_swimming_results(competition):
     date_pattern = r"(\d{2}.\d{2}.\d{4})"
     result_pattern = r"(\d+)\.(\w+\s+\w+)\s+(\d+)\s+(\w+)\s*([\w\s-]*)\s+([\d:\.]+)\s+([0-9]{3,4})"
     race_pattern = r"(Женщины|Мужчины)\s+,\s+(\w+)m\s+(\w+)\s+(\w+\s)?(\d+\s-\s\d+)"
+    age_category_pattern = r"(\d+\s-\s\d+)"
 
     # определяем кодировку текста
     raw_text = full_text.encode('utf-8', errors='ignore')
@@ -165,7 +166,7 @@ def parse_pdf_swimming_results(competition):
             style = match.group(3)
             if match.group(4):
               style += ' ' + match.group(4)  
-            age_category = match.group(5)  
+            # age_category = match.group(5)  
 
         # если строка содержит Результаты
         elif "Результаты" in line:
@@ -177,6 +178,13 @@ def parse_pdf_swimming_results(competition):
               progress.set_status(ReadingStatus.DATE_READ)
               # сохраняем в переменной дату
               date = match.group(1)
+
+        elif "лет" in line and "моложе" not in line:
+           match = re.search(age_category_pattern, line)
+           if match:
+              age_category = match.group(1)  
+           
+           
 
         # если текущий статус - RESULT_READ, вносим полученные данные в словарь new_row_data
         if progress.is_result_read():
