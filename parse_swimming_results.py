@@ -9,7 +9,10 @@ import os
 import json
 
 
-input_file = 'sources/competitions_lists/test2.json'
+input_file = 'sources/competitions_lists/test3.json'
+
+
+
 
 print('Script started')
 output_results_file_path = 'sources/test2.csv'
@@ -118,7 +121,7 @@ def parse_pdf_swimming_results(competition):
     result = chardet.detect(raw_text)
     encoding = result['encoding']
     if encoding:
-       full_text = raw_text.decode(encoding, errors='replace')
+        full_text = raw_text.decode(encoding, errors='replace')
     else:
         full_text = raw_text.decode('utf-8', errors='replace')
     
