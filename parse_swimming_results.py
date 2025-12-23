@@ -9,13 +9,11 @@ import os
 import json
 
 
-input_file = 'sources/competitions_lists/test3.json'
-
-
-
+input_file = 'sources/competitions_lists/test1.json'
 
 print('Script started')
-output_results_file_path = 'sources/test2.csv'
+output_results_file_path = 'sources/test23.12.csv'
+
 
 # создание словаря с именами столбцов будущего датафрейма и типами данных
 column_types = {
@@ -42,7 +40,8 @@ class ReadingStatus(Enum):
     READING_STARTED = 1 # чтение начато (стартовый статус)
     DISTANCE_READ = 2 # прочитана строка с дистанцией: длина дистанции, стиль, м/ж, возрастная категория
     DATE_READ = 3 # прочитана строка с датой
-    RESULT_READ = 4 # прочитана строка с результатом: место, фамилия и имя спортсмена, возраст, клуб, время (результат), набранные очки
+    AGE_CATEGORY_READ = 4
+    RESULT_READ = 5 # прочитана строка с результатом: место, фамилия и имя спортсмена, возраст, клуб, время (результат), набранные очки
 
 
 # класс для корректного изменения статуса чтения
@@ -105,16 +104,19 @@ def parse_pdf_swimming_results(competition):
         pdf_reader = PyPDF2.PdfReader(pdf_file)
         for page_num in range(len(pdf_reader.pages)):
             page = pdf_reader.pages[page_num]
+            # print(page.extract_text())
             full_text += page.extract_text()
     except Exception as e:
        print(f"Ошибка при открытии или чтении PDF-файла: {e}")
        return
     
     # паттерны для извлечения данных из строк разных типов: дата/результат/дистанция
-    date_pattern = r"(\d{2}.\d{2}.\d{4})"
-    result_pattern = r"(\d+)\.(\w+\s+\w+)\s+(\d+)\s+(\w+)\s*([\w\s-]*)\s+([\d:\.]+)\s+([0-9]{3,4})"
-    race_pattern = r"(Женщины|Мужчины)\s+,\s+(\w+)m\s+(\w+)\s+(\w+\s)?(\d+\s-\s\d+)"
-    age_category_pattern = r"(\d+\s-\s\d+)"
+    regex_patterns = {
+      "date": r"(\d{2}.\d{2}.\d{4})",
+      "result": r"(\d+)\.(\w+\s+\w+)\s+(\d+)\s+(\w+)\s*([\w\s-]*)\s+([\d:\.]+)(?:\s+([0-9]{3,4}))?",
+      "race" : r"(Женщины|Мужчины)\s*,\s*(\d+)m\s+(\w+)\s+(\w+\s)?((?:\d{1,3}\s*-\s*\d{1,3})|(?:\d{1,3}\s+лет\s+и\s+моложе))",
+      "age_category" : r"(\d+\s-\s\d+)"
+    }
 
     # определяем кодировку текста
     raw_text = full_text.encode('utf-8', errors='ignore')
@@ -133,7 +135,7 @@ def parse_pdf_swimming_results(competition):
         # если строка начинается с 1.ФАМИЛИЯ
         if re.search(r"^\d{1,2}\.[а-яА-Я]{2,}", line):
           # используем паттерн result_pattern
-          match = re.search(result_pattern, line)
+          match = re.search(regex_patterns['result'], line)
 
           if match:
             # устанавливаем статус RESULT_READ
@@ -149,12 +151,14 @@ def parse_pdf_swimming_results(competition):
                 club += ' ' 
               club += match.group(5)
             time = match.group(6)
-            points = match.group(7)
+            points_raw = match.group(7)
+            points = int(points_raw) if points_raw is not None else None
 
         # если строка содержит Дистанция
         elif "Дистанция" in line:
           # используем паттерн race_pattern
-          match = re.search(race_pattern, line)
+          print(line)
+          match = re.search(regex_patterns['race'], line)
           
           if match:
             # устанавливаем статус DISTANCE_READ
@@ -169,12 +173,12 @@ def parse_pdf_swimming_results(competition):
             style = match.group(3)
             if match.group(4):
               style += ' ' + match.group(4)  
-            # age_category = match.group(5)  
+            age_category = match.group(5)  
 
         # если строка содержит Результаты
         elif "Результаты" in line:
             # используем паттерн date_pattern
-            match = re.search(date_pattern, line)
+            match = re.search(regex_patterns['date'], line)
 
             if match:
               # устанавливаем статус DATE_READ
@@ -182,11 +186,15 @@ def parse_pdf_swimming_results(competition):
               # сохраняем в переменной дату
               date = match.group(1)
 
-        elif "лет" in line and "моложе" not in line:
-           match = re.search(age_category_pattern, line)
-           if match:
-              age_category = match.group(1)  
+        elif "лет" in line:
+           match = re.search(regex_patterns['age_category'], line)
            
+           if match:
+              
+              # устанавливаем статус DATE_READ
+              progress.set_status(ReadingStatus.AGE_CATEGORY_READ)
+              # сохраняем в переменной дату
+              age_category = match.group(1)         
            
 
         # если текущий статус - RESULT_READ, вносим полученные данные в словарь new_row_data
@@ -206,9 +214,8 @@ def parse_pdf_swimming_results(competition):
             'place': place
           }
 
-
           # добавляем в датафрейм новую строку - new_row_data
-          if new_row_data['age'] >= 20:
+          if new_row_data['age'] >= 25:
             results_dataframe.loc[len(results_dataframe)] = new_row_data
 
           if len(results_dataframe)%100 == 0:
@@ -219,38 +226,78 @@ with open(input_file, "r", encoding="utf-8") as f:
     competitions = json.load(f)
 
 for comp in competitions:
-   # вызов функции (загрузка данных в датафрейм)
-   parse_pdf_swimming_results(comp)
-   # удаление дубликатов и перезапись индексов
-   results_dataframe = results_dataframe.drop_duplicates().reset_index(drop=True)
+  match comp['protocol_type']:
+      case "standart" | "vfpm":
+        status_order = [
+            ReadingStatus.READING_STARTED,
+            ReadingStatus.DISTANCE_READ,
+            ReadingStatus.DATE_READ,
+            ReadingStatus.RESULT_READ
+        ]
+      case "standart_with_separate_age_category":
+        status_order = [
+            ReadingStatus.READING_STARTED,
+            ReadingStatus.DISTANCE_READ,
+            ReadingStatus.DATE_READ,
+            ReadingStatus.AGE_CATEGORY_READ,
+            ReadingStatus.RESULT_READ
+        ]
+      case "table":
+        status_order = [
+            ReadingStatus.READING_STARTED,
+            ReadingStatus.DATE_READ,
+            ReadingStatus.DISTANCE_READ,
+            ReadingStatus.AGE_CATEGORY_READ,
+            ReadingStatus.RESULT_READ
+        ]
+      case "table_without_grid":
+        status_order = [
+            ReadingStatus.READING_STARTED,
+            ReadingStatus.DISTANCE_READ,
+            ReadingStatus.AGE_CATEGORY_READ,
+            ReadingStatus.RESULT_READ
+        ]
 
+  # вызов функции (загрузка данных в датафрейм)
+  parse_pdf_swimming_results(comp)
+  # удаление дубликатов и перезапись индексов
+  results_dataframe = results_dataframe.drop_duplicates().reset_index(drop=True)
 
-# создание файла результатов, если отсутствует, и добавление данных к файлу, если файл существует
-if os.path.exists(output_results_file_path) and os.path.getsize(output_results_file_path) > 0:
-    header = False
-    mode = 'a'
-else:
-    header = True
-    mode = 'w'
+  # if results_dataframe['age'].iloc[0] > 1000:
+  #    results_dataframe['age'] = competitions['year'] - results_dataframe['age']
+  # else:
+  #    sorted_df = results_dataframe.assign(age_start=results_dataframe['age_category'].str.extract(r"^(\d+)").astype(int)).sort_values('age_start')
+  #    first_row = sorted_df.iloc[0]
+  #    if first_row['age'] < first_row['age_start'] or first_row['age'] > first_row['age_start']+4:
+  #       results_dataframe['age'] = competitions['year'] - results_dataframe['age']
 
-# загрузка данных в csv файл
-try:
-    results_dataframe.to_csv(
-        path_or_buf=output_results_file_path,
-        sep=',',
-        na_rep='',
-        header=header,
-        index=False,
-        mode=mode,
-        encoding='windows-1251',
-        compression='infer',
-        quotechar='"',
-        doublequote=True,
-        decimal='.',
-        errors='strict',
-    )
-    print(f"Данные успешно загружены в файл: {output_results_file_path}")
-except Exception as e:
-    print(f"Ошибка при записи в CSV-файл: {e}")
+    # создание файла результатов, если отсутствует, и добавление данных к файлу, если файл существует
+  if os.path.exists(output_results_file_path) and os.path.getsize(output_results_file_path) > 0:
+      header = False
+      mode = 'a'
+  else:
+      header = True
+      mode = 'w'
 
-results_dataframe = None
+  # загрузка данных в csv файл
+  try:
+      results_dataframe.to_csv(
+          path_or_buf=output_results_file_path,
+          sep=',',
+          na_rep='',
+          header=header,
+          index=False,
+          mode=mode,
+          encoding='windows-1251',
+          compression='infer',
+          quotechar='"',
+          doublequote=True,
+          decimal='.',
+          errors='strict',
+      )
+      print(f"Данные успешно загружены в файл: {output_results_file_path}")
+  except Exception as e:
+      print(f"Ошибка при записи в CSV-файл: {e}")
+
+  results_dataframe = results_dataframe.head(0)
+

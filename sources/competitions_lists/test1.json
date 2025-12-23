@@ -1,0 +1,17 @@
+[
+  {
+    "competition_id": 2,
+    "competition_name": "Кубок Эльбруса",
+    "city": "Кисловодск",
+    "pool_length": "50m",
+    "year": 2025,
+    "competition_dates": "2025-02-22 – 2025-02-23",
+    "input_file_path": "sources/results_protocols/2025/2_Кубок_Эльбруса_2025.pdf",
+    "federation": "ФПМ",
+    "competition_level": "2",
+    "swimpool": "ДС Арена Кисловодск",
+    "address": "ул. Седлогорская, 157 Г",
+    "timekeeping": "электронный",
+    "protocol_type": "standart_with_separate_age_category"
+  }
+]
